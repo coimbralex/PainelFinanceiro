@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 
-
+from globais import *
 
 
 
@@ -68,15 +68,19 @@ layout = dbc.Col([
                             dbc.Col([
                                 dbc.Label("Extras"),
                                 dbc.Checklist(
-                                    options=[],
-                                    value=[],
+                                    options=[{"label": "Foi Recebida", "value": 1},
+                                        {"label": "Receita Recorrente", "value": 2}],
+                                    value=[0],
                                     id='switches-input-receitas',
                                     switch=True
                                 )
                             ],width=4),
+
                             dbc.Col([
                                 html.Label('Categoria da Receita'),
-                                dbc.Select(id='select_receita', options=[], value=[])
+                                dbc.Select(id='select_receita', 
+                                options=[{'label': i, 'value': i} for i in cat_receita], 
+                                value=cat_receita[1])
                             ], width=4)
                         ],style={'margin-top': '25px'}),
 
@@ -154,15 +158,18 @@ layout = dbc.Col([
                             dbc.Col([
                                 dbc.Label("Extras"),
                                 dbc.Checklist(
-                                    options=[],
-                                    value=[],
+                                    options=[{"label": "Foi paga", "value": 1},
+                                        {"label": "Despesa recorrente", "value": 2}],
+                                    value=[0],
                                     id='switches-input-despesa',
                                     switch=True
                                 )
                             ],width=4),
                             dbc.Col([
                                 html.Label('Categoria da Despesa'),
-                                dbc.Select(id='select_despesa', options=[], value=[])
+                                dbc.Select(id='select_despesa', 
+                                options=[{'label': i, 'value': i} for i in cat_despesa], 
+                                value=[1])
                             ], width=4)
                         ],style={'margin-top': '25px'}),
 
@@ -239,11 +246,35 @@ def toggle_modal(n1, is_open):
     
 # Pop-up despesa
 @app.callback(
-    Output('modal-novo-despesa', 'is_open'),
-    Input('open-novo-despesa', 'n_clicks'),
-    State('modal-novo-despesa', 'is_open')
-)
-def toggle_modal(n1, is_open):
-    if n1:
-        return not is_open
+    Output('store-receita', 'data'),
+    Input('salvar-receita', 'n_clicks'),
+    [
+        State('txt-receita', 'value'),
+        State('valor-receita', 'value'),
+        State('date-receitas', 'date'),
+        State('switches-input-receita', 'value'),
+        State('select_receita', 'value'),
+        State('store-receitas', 'data'),
+        
+    ]
     
+)
+
+def salve_form_receita(n, descricao, valor, date, switches, categoria, dict_receita):
+    #import pdb
+    #pdb.set_trace()
+
+    df_receita = pd.DataFrame(dict_receita)
+    if n and not (valor == "" or valor == None):
+        valor = round(float(valor),2)
+        date = pd.to_datetime(date).date()
+        categoria = categoria(0)
+        recebido = 1 if 1 in switches else 0
+        fixo = 1 if 2 in switches else 0
+         
+        df_receita.loc[df_receita.shape[0]] = [valor, recebido, fixo, date, categoria, descricao]
+        df_receita.to_csv("df_receita.csv")
+
+    data_return = df_receita.to_dict()
+
+    return data_return
